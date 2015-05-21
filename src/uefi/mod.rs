@@ -23,7 +23,7 @@ pub struct EFI_SYSTEM_TABLE {
     StdErr : *const EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
     RuntimeServices : *const EFI_RUNTIME_SERVICES,
     BootServices : *const EFI_BOOT_SERVICES,
-    NumberOfTableEntries : uint,
+    NumberOfTableEntries : usize,
     ConfigurationTable : *const EFI_CONFIGURATION_TABLE
 }
 
@@ -67,7 +67,7 @@ impl SystemTable {
     }
 }
 
-fn unpack<T>(slice: &[T]) -> (*const T, uint) {
+fn unpack<T>(slice: &[T]) -> (*const T, usize) {
     unsafe {
         transmute(slice)
     }
@@ -75,7 +75,7 @@ fn unpack<T>(slice: &[T]) -> (*const T, uint) {
 
 pub trait SimpleTextOutput {
     unsafe fn write_raw(&self, str: *const u16);
-    
+
     #[no_stack_check]
     fn write(&self, str: &str) {
         let mut buf = [0u16; 4096];
@@ -86,8 +86,9 @@ pub trait SimpleTextOutput {
             buf[i] = str.char_at(i) as u16;
             i += 1;
         }
-        buf[buf.len() - 1] = 0;
-        
+        let len: usize = buf.len() - 1;
+        buf[len] = 0;
+
         unsafe {
             let (p, _) = unpack(&buf);
             self.write_raw(p);
@@ -120,7 +121,7 @@ extern "rust-intrinsic" {
 #[no_mangle]
 #[no_stack_check]
 pub extern "win64" fn efi_start(_ImageHandle : EFI_HANDLE,
-                                sys_table : *const EFI_SYSTEM_TABLE) -> int {
+                                sys_table : *const EFI_SYSTEM_TABLE) -> isize {
     unsafe { SYSTEM_TABLE = sys_table; }
     ::efi_main(SystemTable(sys_table));
     0
@@ -134,7 +135,7 @@ pub fn __morestack() {
 
 #[no_mangle]
 #[no_stack_check]
-pub extern fn memset(s : *const u8, c : int, n : uint) -> *const u8 {
+pub extern fn memset(s : *const u8, c : isize, n : usize) -> *const u8 {
     unsafe {
         let s : &mut [u8] = transmute((s, n));
         let mut i = 0;

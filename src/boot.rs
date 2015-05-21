@@ -1,7 +1,9 @@
-#![no_std]
-#![feature(globs)]
 #![feature(intrinsics)]
 #![feature(asm)]
+#![feature(core)]
+#![feature(no_std)]
+
+#![no_std]
 
 extern crate core;
 
